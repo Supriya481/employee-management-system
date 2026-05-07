@@ -1,19 +1,26 @@
-# Use Java 17 base image
-FROM eclipse-temurin:17-jdk-alpine
+# Use Java 17
+FROM eclipse-temurin:17-jdk
 
 # Create app directory
 WORKDIR /app
 
-# Copy project files
-COPY . .
+# Copy only Maven wrapper and pom first (for better caching)
+COPY mvnw pom.xml ./
+COPY .mvn .mvn
 
-# Give execute permission to mvnw
+# Give permission to mvnw
 RUN chmod +x mvnw
+
+# Download dependencies
+RUN ./mvnw dependency:go-offline
+
+# Copy rest of the project
+COPY src src
 
 # Build the application
 RUN ./mvnw clean package -DskipTests
 
-# Expose port (Render uses PORT env var)
+# Expose port (Render provides PORT env variable)
 EXPOSE 8080
 
 # Run the Spring Boot app
